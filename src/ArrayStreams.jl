@@ -1,73 +1,48 @@
 module ArrayStreams
 
 using ImageMetadata
+import AxisArrays
+using AxisArrays: AxisArray, axisnames, permutation
 using GeometryTypes: Triangle, Point
 using Rotations: Quat
 
-abstract type AbstractArrayStream{S,T,N,I} end
+export AbstractArrayStream, ArrayStream, stream
 
-Base.size(s::AbstractArrayStream{S,T,N}) where {S,T,N} = (S.parameters...,)
-Base.size(s::AbstractArrayStream{S,T,N}, i::Int) where {S,T,N} = S.parameters[i]
-Base.ndims(s::AbstractArrayStream{S,T,N}) where {S,T,N} = N
-Base.length(s::AbstractArrayStream{S,T,N}) where {S,T,N} = prod(S.parameters)
-Base.eltype(s::AbstractArrayStream{S,T,N}) where {S,T,N} = T
-
-"""
-julia> io = IOBuffer();
-
-julia> write(io, [1:10...])
-80
-
-julia> seek(io, 0)
-IOBuffer(data=UInt8[...], readable=true, writable=true, seekable=true, append=false, size=80, maxsize=Inf, ptr=1, mark=-1)
-
-julia> as = ArrayStream{Tuple{2,5},Int,2}(io,0:80,true,false)
-"""
-mutable struct ArrayStream{S,T,N,Ax} <: AbstractArrayStream{S,T,N,I}
-    s::IO
-    axes::Ax
-    offset::Int
-    ownstream::Bool
-    needswap::Bool
-    properties::Dict{String,Any}
+function fixendian(A::AbstractArray, needswap::Bool)
+    if needswap
+        return mappedarray((ntoh, hton), A)
+    else
+        return A
+    end
 end
 
-"""
-    ArrayStream(A::AbstractArray; kwargs...)
+expand2indices(A::AbstractArray{T,NA}, idx::Tuple{Vararg{<:Any,NI}}) where {T,NA,NI} =
+    to_indices(A,(idx..., ntuple(i->Colon(), NA-NI)...))
+expand2indices(A::AbstractArray{T,N}, idx::Tuple{Vararg{<:Any,N}}) where {T,N} =
+    to_indices(A,idx)
 
-`kwargs` is passed to IOBuffer within the function.
-"""
-function ArrayStream(A::AbstractArray{T,N}; kwargs...)
-    ind = to_indices(A, axes(A))
-    ArrayStream{Tuple{size(A)...},T,N,typeof(ind)}(IOBuffer([A...]; kwargs...),ind,0, true)
-end
+include("iotypes/iotypes.jl")
+incldue("abstractarraystream.jl")
+incldue("arraystream.jl")
 
-ownstream(s::ArrayStream) = s.ownstream
-offset(s::ArrayStream) = s.offset
-needswap(s::ArrayStream) = s.needswap
+# TODO: would it be better to use AbstractArrayStream here?
+const AxisStream{S,T,N,I,Ax} = AxisArray{T,N,ArrayStream{S,T,N,I},Ax}
+const MetaStream{S,T,N,I} = ImageMeta{T,N,ArrayStream{S,T,N,I}}
+const MetaAxisStream{S,T,N,I,Ax} = ImageMeta{T,N,AxisStream{S,T,N,I,Ax}}
+const MetaAxis{T,N,D,Ax} = ImageMeta{T,N,AxisArray{T,N,D,Ax}}
+const AbstractMetaStream{S,T,N,I} = Union{MetaStream{S,T,N,I},MetaAxisStream{S,T,N,I,Ax}} where {Ax}
+const AbstractStreamContainer = Union{AbstractMetaStream, AxisStream}
 
-Base.seek(s::ArrayStream, n::Integer) = seek(stream(s), n)
-Base.position(s::ArrayStream) = position(stream(s))
-Base.skip(s::ArrayStream, n::Integer) = skip(stream(s), n)
-Base.close(s::ArrayStream) = close(stream(s))
-Base.eof(s::ArrayStream) = eof(stream(s))
-Base.isopen(s::ArrayStream) = isopen(stream(s))
+BitTypes = Union{Integer,AbstractFloat}
 
-ImageMetadata.properties(s::ArrayStream) = s.properties
 
-mutable struct ChunkedStream{S,T,N,Ax} <: AbstractArrayStream{S,T,N,I}
-    s::AbstractVector{<:ArrayStream}
-    axes::Ax
-    nitr::Int
-    itr::Int
-    properties::Dict{String,Any}
-end
+include("imagemeta.jl")
+include("axisarray.jl")
 
-stream(s::ChunkedStream) = s[s.itr]
-
-include("structview.jl")
-include("indexing.jl")
-include("read.jl")
-include("write.jl")
+# TODO
+# - iterators for chunkedstream
+# - constructors for chunkedstream
+# - colortypes readers
+# - distribution read/write
 
 end
