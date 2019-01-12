@@ -1,6 +1,6 @@
 module ArrayStreams
 
-using ImageMetadata
+using ImageMetadata, StaticArrays, Distributions, ColorTypes
 import AxisArrays
 using AxisArrays: AxisArray, axisnames, permutation
 using GeometryTypes: Triangle, Point
@@ -20,29 +20,20 @@ expand2indices(A::AbstractArray{T,NA}, idx::Tuple{Vararg{<:Any,NI}}) where {T,NA
     to_indices(A,(idx..., ntuple(i->Colon(), NA-NI)...))
 expand2indices(A::AbstractArray{T,N}, idx::Tuple{Vararg{<:Any,N}}) where {T,N} =
     to_indices(A,idx)
-
-include("iotypes/iotypes.jl")
-incldue("abstractarraystream.jl")
-incldue("arraystream.jl")
-
-# TODO: would it be better to use AbstractArrayStream here?
-const AxisStream{S,T,N,I,Ax} = AxisArray{T,N,ArrayStream{S,T,N,I},Ax}
-const MetaStream{S,T,N,I} = ImageMeta{T,N,ArrayStream{S,T,N,I}}
-const MetaAxisStream{S,T,N,I,Ax} = ImageMeta{T,N,AxisStream{S,T,N,I,Ax}}
-const MetaAxis{T,N,D,Ax} = ImageMeta{T,N,AxisArray{T,N,D,Ax}}
-const AbstractMetaStream{S,T,N,I} = Union{MetaStream{S,T,N,I},MetaAxisStream{S,T,N,I,Ax}} where {Ax}
-const AbstractStreamContainer = Union{AbstractMetaStream, AxisStream}
-
 BitTypes = Union{Integer,AbstractFloat}
 
-
+include("iotypes/iotypes.jl")
+include("abstractarraystream.jl")
+include("arraystream.jl")
 include("imagemeta.jl")
 include("axisarray.jl")
 
 # TODO
+# - check extractquat for proper output shape
+#   - Distributions, Quat, SArray
 # - iterators for chunkedstream
 # - constructors for chunkedstream
-# - colortypes readers
+# - Impliment Colors
 # - distribution read/write
 
 end

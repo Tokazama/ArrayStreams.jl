@@ -21,7 +21,7 @@ Base.getindex(s::AbstractArrayStream{S,T,N,IndexLinear}, i::Int) where {S,T,N} =
 
 function Base.getindex(s::AbstractArrayStream{S,T,N,L}, I::Vararg{Int, N}) where {S,T,N,L}
     si = s.streamindices[LinearIndices(size(s))[I...]]
-    ArrayStreams{Tuple{}(stream(s), s.streamindices[LinearIndices(size(s))[I...]], ownstream(s), needswap(s))
+    ArrayStreams{Tuple{1},T,1,1}(stream(s), s.streamindices[LinearIndices(size(s))[I...]], ownstream(s), needswap(s))
 end
 
 # leverage SubArrays which determine whether fast indexing is possible
@@ -35,7 +35,7 @@ function Base.getindex(s::AbstractArrayStream{S,T,N,IndexLinear}, I...) where {S
     end
 end
 
-Base.setindex!(s::AbstractImageStream, I) = error("setindex is not defined for $(typeof(s)). Use write to change stream content.")
+Base.setindex!(s::AbstractArrayStream, I) = error("setindex is not defined for $(typeof(s)). Use write to change stream content.")
 
 function Base.show(io::IO, s::AbstractArrayStream)
     println(summary(s))

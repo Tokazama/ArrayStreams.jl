@@ -1,4 +1,7 @@
 extractquat(a::Quat) = (a.w, a.x, a.y, a.z)
+# TODO: check extractquat for proper output shape
+extractquat(A::AbstractArray{Quat}) = extractquat.(A)
+
 function quatview(A::AbstractArray)
     if size(img, 1) != 4
         @error "Selected dimension, $i, must be of size 4"

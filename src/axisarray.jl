@@ -9,11 +9,10 @@
 ########
 Base.read!(s::AxisStream, sink::ImageMeta) = read!(s, getfield(sink, :data))
 Base.read!(s::AxisStream{S,<:BitTypes}, sink::Array{<:BitTypes}) where {S,N} = read!(getfield(s,:data), sink)
-Base.read!(s::AxisStream{S,T,N,I,Ax}, sink::AxisArray{T,N,D,Ax}) where {S,T,N,I,D,Ax} = read!(getfield(s, :data), getfield(s,:data))
-Base.read(s::AxisStream{S,T,N,I,Ax}) where {S,T,N,I,Ax} = read!(s, AxisArray(Array{T,N}(undef, size(s)), AxisArrays.axisparams(s)))
-Base.read!(s::AxisStream{S,T,N,I,Ax}, sink::AxisArray{T,N,D,Ax}) where {S,T,N,I,D,Ax} = read!(getfield(s,:data), getfield(s:, :data))
+Base.read!(s::AxisStream{S,T,N}, sink::AxisArray{T,N}) where {S,T,N} = read!(getfield(s, :data), getfield(s,:data))
+Base.read(s::AxisStream{S,T,N,I,Ax}) where {S,T,N,I,Ax} = AxisArray(read(s), axisparams(s))
 # raw eltype → struct view can use Axis name permutation to semiautomate this
-Base.read!(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::AxisArray{T,N,D,Ax}) where {S,T,N,I,D,Ax} = read!(s, getfield(s:, :data))
+Base.read!(s::AxisStream{S,<:BitTypes,N}, sink::AxisArray{T,N}) where {S,T,N} = read!(s, getfield(sink, :data))
 
 # Triangle
 function Base.read!(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Triangle}) where {S,T,N,I,Ax}
@@ -52,7 +51,7 @@ function Base.read!(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{T,N}) where 
 end
 
 # Distributions
-function Base.read!(s::AxisStream{S,<:BitTypes}, sink::Array{Ts}) where {S,T<:Distribution}
+function Base.read!(s::AxisStream{S,<:BitTypes}, sink::Array{T}) where {S,T<:Distribution}
     perm = permutation((:statdim, setdiff(axisnames(s), :statdim)...,), axisnames(s))
     return fill!(sink, statview(T, permutedims(read(s), perm)))
 end
@@ -64,31 +63,31 @@ Base.write(s::AxisStream{S,T,N,I,Ax}, sink::ImageMeta) where {S,T,N,I,D,Ax} = wr
 Base.write(s::AxisStream{S,T,N,I,Ax}, sink::AxisArray) where {S,T,N,I,D,Ax} = write(s, getfield(sink, :data))
 
 # Triangle
-function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Triangle}) where {S,T,N,I,Ax} =
+function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Triangle}) where {S,T,N,I,Ax}
     perm = permutation(axisnames(s), (:triangledim, setdiff(axisnames(s), :triangledim)...,))
     write(getfield(s,:data), PermutedDimsArray(mappedview(extracttriangle, sink), perm))
 end
 
 # Point
-function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Point}) where {S,N,I,Ax} =
+function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Point}) where {S,N,I,Ax}
     perm = permutation(axisnames(s), (:pointdim, setdiff(axisnames(s), :pointdim)...,))
     write(getfield(s,:data), PermutedDimsArray(mappedview(extractpoint, A), perm))
 end
 
 # Quat
-function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Quat}) where {S,N,I,Ax} =
+function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Quat}) where {S,N,I,Ax}
     perm = permutation(axisnames(s), (:quatdim, setdiff(axisnames(s), :quatdim)...,))
     write(getfield(s,:data), PermutedDimsArray(mappedview(extractquat, A), perm))
 end
 
 # SMatrix
-function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Quat}) where {S,N,I,Ax} =
+function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{Quat}) where {S,N,I,Ax}
     perm = permutation(axisnames(s), (:matdim1, :matdim2, setdiff(axisnames(s), :matdim1, :matdim2)...,))
     write(getfield(s,:data), PermutedDimsArray(extractsmat(sink), perm))
 end
 
 # SVector
-function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{SVector}) where {S,N,I,Ax} =
+function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{SVector}) where {S,N,I,Ax}
     perm = permutation(axisnames(s), (:vecdim, setdiff(axisnames(s), :vecdim)...,))
     write(getfield(s,:data), PermutedDimsArray(extractsvec(sink), perm))
 end
@@ -100,7 +99,7 @@ function Base.write(s::AxisStream{S,<:BitTypes,N,I,Ax}, sink::Array{<:Union{Colo
 end
 
 # Distributions
-function Base.write(s::AxisStream{S,<:BitTypes}, sink::Array{Ts}) where {S,T<:Distribution}
+function Base.write(s::AxisStream{S,<:BitTypes}, sink::Array{T}) where {S,T<:Distribution}
     perm = permutation(axisnames(s), (:statdim, setdiff(axisnames(s), :statdim)...,))
     write(getfield(s,:data), PermutedDimsArray(extractstat(sink), perm))
 end

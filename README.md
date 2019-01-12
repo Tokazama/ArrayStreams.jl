@@ -1,3 +1,8 @@
+---
+
+# Construct ArrayStream from Array
+
+```
 julia> io = IOBuffer();
 
 julia> write(io, [1:10...])
@@ -7,12 +12,7 @@ julia> seek(io, 0)
 IOBuffer(data=UInt8[...], readable=true, writable=true, seekable=true, append=false, size=80, maxsize=Inf, ptr=1, mark=-1)
 
 julia> as = ArrayStream{Tuple{2,5},Int,2}(io,0:80,true,false)
-
----
-
-    ArrayStream(A::AbstractArray, needswap, properties; kwargs...)
-
-`kwargs` is passed to IOBuffer within the function.
+```
 
 # Indexing
 
