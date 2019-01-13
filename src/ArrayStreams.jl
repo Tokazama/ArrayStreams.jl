@@ -1,6 +1,6 @@
 module ArrayStreams
 
-using ImageMetadata, StaticArrays, Distributions, ColorTypes
+using ImageMetadata, ImageCore, StaticArrays, Distributions, ColorTypes
 import AxisArrays
 using AxisArrays: AxisArray, axisnames, permutation
 using GeometryTypes: Triangle, Point
@@ -29,11 +29,14 @@ include("imagemeta.jl")
 include("axisarray.jl")
 
 # TODO
+# - write IOBuffer (i.e. write(s) where there's not Array parameters but buffer contains
+# - documentation
+#   - write should be explained in the context of sinks because ArrayStream acts as the sink in this case
 # - check extractquat for proper output shape
 #   - Distributions, Quat, SArray
 # - iterators for chunkedstream
 # - constructors for chunkedstream
 # - Impliment Colors
-# - distribution read/write
+# - append! operations (maybe, as ArrayStreams are more like StaticArrays)
 
 end

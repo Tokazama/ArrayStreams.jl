@@ -1,5 +1,20 @@
 abstract type AbstractArrayStream{S,T,N,I} <: AbstractArray{T,N} end
 
+# IO interactions
+stream(s::AbstractArrayStream) = error("stream is not defined for $(typeof(s))")
+Base.seek(s::AbstractArrayeStream, n::Integer) = seek(stream(s), n)
+Base.position(s::AbstractArrayStream) = position(stream(s))
+Base.skip(s::AbstractArrayStream, n::Integer) = skip(stream(s), n)
+Base.close(s::AbstractArrayStream) = close(stream(s))
+Base.eof(s::AbstractArrayStream) = eof(stream(s))
+Base.isopen(s::AbstractArrayStream) = isopen(stream(s))
+
+# Field accessors
+ownstream(s::AbstractArrayStream) = getfield(s, :ownstream)
+streamindices(s::AbstractArrayStream) = getfield(s, :streamindices)
+needswap(s::AbstractArrayStream) = getfield(s :needswap)
+
+
 Base.size(s::AbstractArrayStream{S,T,N}) where {S,T,N} = (S.parameters...,)
 Base.size(s::AbstractArrayStream{S,T,N}, i::Int) where {S,T,N} = S.parameters[i]
 Base.ndims(s::AbstractArrayStream{S,T,N}) where {S,T,N} = N
@@ -8,14 +23,19 @@ Base.eltype(s::AbstractArrayStream{S,T,N}) where {S,T,N} = T
 
 Base.IndexStyle(::Type{AbstractArrayStream}) = IndexLinear
 
-stream(s::AbstractArrayStream) = error("stream is not defined for $(typeof(s))")
-ownstream(s::AbstractArrayStream) = getfield(s, :ownstream)
-streamindices(s::AbstractArrayStream) = getfield(s, :streamindices)
-needswap(s::AbstractArrayStream) = getfield(s :needswap)\w
 
 Base.firstindex(s::AbstractArrayStream) = streamindices(s)[1]
 Base.lastindex(s::AbstractArrayStream) = streamindices(s)[end]
 
+"""
+    getindex(AbstractArrayStream, I)
+
+While an `ArrayStream` may be indexed, this will only result in performance gains
+if the indices represent a significantly smaller portion of the original `ArrayStream`.
+This is because an indexed ArrayStream has to perform a `seek(ArrayStream, index)`
+step at every index before reading. This is in contrast to reading in a single
+chunk of memory, which is considerably faster.
+"""
 Base.getindex(s::AbstractArrayStream{S,T,N,IndexLinear}, i::Int) where {S,T,N} =
     ArrayStreams(stream(s), streamindices(s)[i], ownstream(s), needswap(s))
 

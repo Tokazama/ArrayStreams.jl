@@ -1,10 +1,36 @@
-struct ArrayStream{S,T,N,I<:Union{AbstractRange,Int,Vector}} #<: AbstractArrayStream{T,N}
+"""
+# ArrayStream Construction
+
+## Array -> ArrayStream
+
+
+# Arguments
+
+* `s::IO`: should be any subtype of IO for reading/writing data
+* `streamindices::Union{AbstractRange,Int,Vector}`: linear indices of the `s`.
+    This indicates which positions of `s` are to be read. LinearIndices (derived
+    from the `S` trait, or the size) are mapped to `streamindices` to ensure
+    appropriate indexing.
+* `owsntream::Bool`: whether a given instance of `ArrayStream is the primary accesor to `s`
+* `needswap::Bool`: indicates whether byte swapping is necessary at read time.
+
+"""
+struct ArrayStream{S,T,N,I<:Union{AbstractRange,Int,Vector}} <: AbstractArrayStream{S,T,N,I}
     s::IO
     streamindices::I
     ownstream::Bool
     needswap::Bool
 end
 
+"""
+    read(ArrayStream)
+    read!(ArrayStream, sink)
+    read(AxisStream)
+    read!(AxisStream, sink)
+    read(MetaAxisStream)
+    read!(MetaAxisStream, sink)
+
+"""
 # TODO: would it be better to use AbstractArrayStream here?
 const AxisStream{S,T,N,I,Ax} = AxisArray{T,N,ArrayStream{S,T,N,I},Ax}
 const MetaStream{S,T,N,I} = ImageMeta{T,N,ArrayStream{S,T,N,I}}
@@ -73,6 +99,6 @@ function Base.read!(s::ArrayStream{S,T,N,Vector{Int}}, sink::Array{T,N}) where {
     end
 end
 
-Base.write(s::ArrayStream{S,Tr,N}, sink::Array{Ts,N}) where {S,Tr<:BitTypes,Ts<:BitTypes,N} =
+Base.write(s::ArrayStream{S,<:BitTypes,N}, sink::Array{<:BitTypes,N}) where {S,N} =
     write(s, reinterpret(Tr, s))
 
